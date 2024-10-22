@@ -4,4 +4,5 @@
 .mvn
 .vscode
 mvmw*
-Dockerfile
+Dockerfile*
+*.md 
