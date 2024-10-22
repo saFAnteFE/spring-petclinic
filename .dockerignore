@@ -1,0 +1,7 @@
+.devcontainer
+.editorconfig
+.git*
+.mvn
+.vscode
+mvmw*
+Dockerfile
