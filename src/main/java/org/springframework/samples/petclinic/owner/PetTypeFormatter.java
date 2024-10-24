@@ -44,11 +44,13 @@ public class PetTypeFormatter implements Formatter<PetType> {
 	}
 
 	@Override
+	@SuppressWarnings("null")
 	public String print(PetType petType, Locale locale) {
 		return petType.getName();
 	}
 
 	@Override
+	@SuppressWarnings("null")
 	public PetType parse(String text, Locale locale) throws ParseException {
 		Collection<PetType> findPetTypes = this.owners.findPetTypes();
 		for (PetType type : findPetTypes) {

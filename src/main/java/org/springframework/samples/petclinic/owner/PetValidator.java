@@ -34,6 +34,7 @@ public class PetValidator implements Validator {
 	private static final String REQUIRED = "required";
 
 	@Override
+	@SuppressWarnings("null")
 	public void validate(Object obj, Errors errors) {
 		Pet pet = (Pet) obj;
 		String name = pet.getName();
@@ -57,6 +58,7 @@ public class PetValidator implements Validator {
 	 * This Validator validates *just* Pet instances
 	 */
 	@Override
+	@SuppressWarnings("null")
 	public boolean supports(Class<?> clazz) {
 		return Pet.class.isAssignableFrom(clazz);
 	}

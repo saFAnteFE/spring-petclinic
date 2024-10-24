@@ -100,6 +100,7 @@ public class PostgresIntegrationTests {
 		private boolean isFirstRun = true;
 
 		@Override
+		@SuppressWarnings("null")
 		public void onApplicationEvent(ApplicationPreparedEvent event) {
 			if (isFirstRun) {
 				environment = event.getApplicationContext().getEnvironment();
