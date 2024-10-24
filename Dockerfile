@@ -1,21 +1,47 @@
-FROM maven:3.8.5-openjdk-17 AS builder
+FROM eclipse-temurin:17-jdk-jammy AS builder
 
-WORKDIR /src/usr/app
+WORKDIR /build
+COPY --chmod=0755 mvnw mvnw
+COPY .mvn .mvn
 
-COPY . .
-# using cache avoid redundant dependencies download without previous mvn dependency  
-# processing
-RUN --mount=type=cache,target=/root/.m2 mvn clean package
+RUN --mount=type=bind,source=pom.xml,target=pom.xml \
+    --mount=type=cache,target=/root/.m2 ./mvnw dependency:go-offline -DskipTests
 
-FROM openjdk:17-ea-29-slim AS runner
-RUN groupadd --gid 1000 java \
-  && useradd --uid 1000 --gid java --shell /bin/bash --create-home java
+FROM builder AS package
+WORKDIR /build
+COPY ./src src/
+RUN --mount=type=bind,source=pom.xml,target=pom.xml \
+    --mount=type=cache,target=/root/.m2 \
+    ./mvnw package -DskipTests && \
+    mv target/$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout)-$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout).jar target/petclinic.jar
+
+FROM package AS extract
+WORKDIR /build
+RUN java -Djarmode=layertools -jar target/petclinic.jar extract --destination target/extracted
+
+# FROM extract AS development
+# WORKDIR /build
+# RUN cp -r /build/target/extracted/dependencies/. ./
+# RUN cp -r /build/target/extracted/spring-boot-loader/. ./
+# RUN cp -r /build/target/extracted/snapshot-dependencies/. ./
+# RUN cp -r /build/target/extracted/application/. ./
+# ENV JAVA_TOOL_OPTIONS -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8000
+# CMD [ "java", "-Dspring.profiles.active=postgres", "org.springframework.boot.loader.launch.JarLauncher" ]
+
+FROM eclipse-temurin:17-jre-jammy AS final
+ARG UID=10001
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/nonexistent" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid "${UID}" \
+    java
 USER java
-
-WORKDIR /app
-COPY --from=builder --chown=java:java /src/usr/app/target/spring-petclinic-3.3.0-SNAPSHOT.jar \
- /app/spring-petclinic-3.3.0-SNAPSHOT.jar
-
+COPY --from=extract build/target/extracted/dependencies/ ./
+COPY --from=extract build/target/extracted/spring-boot-loader/ ./
+COPY --from=extract build/target/extracted/snapshot-dependencies/ ./
+COPY --from=extract build/target/extracted/application/ ./
 EXPOSE 8080
- 
-ENTRYPOINT ["java","-jar","spring-petclinic-3.3.0-SNAPSHOT.jar"]
+ENTRYPOINT [ "java", "org.springframework.boot.loader.launch.JarLauncher" ]
