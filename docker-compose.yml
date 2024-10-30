@@ -1,21 +1,4 @@
 services:
-  db:
-    image: postgres:17.0
-    ports:
-      - "5432:5432"
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_PASSWORD=petclinic
-      - POSTGRES_USER=petclinic
-      - POSTGRES_DB=petclinic
-    networks:
-      - netclinic
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "petclinic"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
   petclinic:
     image: petclinic:2.0
     build:
@@ -25,12 +8,28 @@ services:
       db:
         condition: service_healthy
     environment:
-      - POSTGRES_URL=jdbc:postgresql://db:5432/petclinic
+      - DATABASE_URL=jdbc:postgresql://db:5432/petclinic
       - JAVA_TOOL_OPTIONS=-Dspring.profiles.active=postgres
     networks:
       - netclinic
     ports:
       - 8080:8080
+  db:
+    image: postgres:17.0
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=petclinic
+      - POSTGRES_PASSWORD=petclinic
+    networks:
+      - netclinic
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "petclinic"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 volumes:
   db-data:
 networks:
