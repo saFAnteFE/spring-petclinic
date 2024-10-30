@@ -31,6 +31,10 @@ delete-secrets:
 list-secrets:
 	    DOCKER_HOST=${DOCKER_HOST} docker secret ls
 
+.PHONY: ps
+ps:
+	    DOCKER_HOST=${DOCKER_HOST} docker ps
+
 .PHONY: redeploy-all
 redeploy-all:
 	    -$(MAKE) swarm-remove-stack

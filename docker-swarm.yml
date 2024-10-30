@@ -1,0 +1,54 @@
+services:
+  db:
+    image: postgres:17.0
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=petclinic
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres-passwd
+    secrets:
+      - postgres-passwd      
+    networks:
+      - netclinic
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "petclinic"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  petclinic:
+    image: safantefe/spring-petclinic:latest
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        order: start-first
+    init: true
+    depends_on:
+      - db
+    environment:
+      - JAVA_TOOL_OPTIONS=-Dspring.profiles.active=postgres
+    secrets:
+      - source: mysecrets
+        target: secrets.yml
+    networks:
+      - netclinic
+    ports:
+      - 8080:8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "127.0.0.1:8080/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+volumes:
+  pgdata:
+networks:
+  netclinic:
+secrets:
+  mysecrets:
+    external: true
+  postgres-passwd:
+    external: true  
+

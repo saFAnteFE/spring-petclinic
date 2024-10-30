@@ -1,6 +1,6 @@
 services:
   petclinic:
-    image: petclinic:2.0
+    image: petclinic:latest
     build:
       context: .
     init: true
